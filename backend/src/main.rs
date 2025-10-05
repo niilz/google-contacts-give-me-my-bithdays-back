@@ -2,22 +2,83 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
+use clap::Parser;
 use warp::reply::Response;
 use warp::{Filter, serve};
 
+const REDIRECT_URI_DEV: &str = "http://localhost:5000/code";
+
+#[derive(Parser, Debug)]
+#[command(version, about)]
+struct Args {
+    #[arg(short = 's', long)]
+    client_secret: String,
+    #[arg(short = 'i', long)]
+    client_id: String,
+}
+
 #[tokio::main]
 async fn main() {
-    let hi = warp::path("code")
+    // Do it here to check our program is started correctly
+    let _ = Args::parse();
+
+    // Redirect-receiver for access_token
+    let code_filter = warp::path("code")
         .and(warp::query::<HashMap<String, String>>())
-        .map(|map| {
-            for (key, value) in map {
-                println!("key: {key}, value: {value}");
-            }
-            Response::new("foo".into())
-        });
-    let server = serve(hi);
+        .map(|params: HashMap<String, String>| {
+            let Some(code) = params.get("code") else {
+                eprintln!("oops, no code?");
+                panic!("TODO: Responde with: oops no code!");
+            };
+            println!("got code: {code}");
+            // call again here so the path closure does not have to capture the environment
+            let args = Args::parse();
+            (code.to_string(), args.client_id, args.client_secret)
+        })
+        .then(
+            async move |(code, client_id, client_secret): (String, String, String)| {
+                let birthdays = fetch_birthdays(&code, &client_id, &client_secret).await;
+                println!("BDays: {birthdays:?}");
+                Response::new(format!("Thank you for the code: {code}").into())
+            },
+        );
+
+    let server = serve(code_filter);
     server
         .run(SocketAddr::from_str("127.0.0.1:5000").expect("no valid socket-addr"))
         .await;
     println!("Hello, world!");
+}
+
+async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> anyhow::Result<()> {
+    let oauth_tokens = request_tokens(code, client_id, client_secret).await?;
+    // request the calender data
+    println!("Auth-Tokens: {oauth_tokens}");
+    //reqwest::get("TODO-Calendar-URL").await?;
+    //todo!()
+    println!("TODO: fetch the birthdays");
+    Ok(())
+}
+
+async fn request_tokens(
+    code: &str,
+    client_id: &str,
+    client_secret: &str,
+) -> anyhow::Result<String> {
+    let token_request_url = "https://oauth2.googleapis.com/token";
+    let mut oauth_data = HashMap::new();
+    oauth_data.insert("code", code);
+    oauth_data.insert("client_id", client_id);
+    oauth_data.insert("client_secret", client_secret);
+    oauth_data.insert("redirect_uri", REDIRECT_URI_DEV);
+    oauth_data.insert("grant_type", "authorization_code");
+    let client = reqwest::Client::new();
+    let oauth_tokens = client
+        .post(token_request_url)
+        .form(&oauth_data)
+        .send()
+        .await?
+        .text()
+        .await?;
+    Ok(oauth_tokens)
 }
