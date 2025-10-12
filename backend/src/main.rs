@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
+use backend::AuthTokens;
 use clap::Parser;
 use warp::reply::Response;
 use warp::{Filter, serve};
@@ -53,7 +54,7 @@ async fn main() {
 async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> anyhow::Result<()> {
     let oauth_tokens = request_tokens(code, client_id, client_secret).await?;
     // request the calender data
-    println!("Auth-Tokens: {oauth_tokens}");
+    println!("Auth-Tokens: {oauth_tokens:?}");
     //reqwest::get("TODO-Calendar-URL").await?;
     //todo!()
     println!("TODO: fetch the birthdays");
@@ -64,7 +65,7 @@ async fn request_tokens(
     code: &str,
     client_id: &str,
     client_secret: &str,
-) -> anyhow::Result<String> {
+) -> anyhow::Result<AuthTokens> {
     let token_request_url = "https://oauth2.googleapis.com/token";
     let mut oauth_data = HashMap::new();
     oauth_data.insert("code", code);
@@ -73,12 +74,12 @@ async fn request_tokens(
     oauth_data.insert("redirect_uri", REDIRECT_URI_DEV);
     oauth_data.insert("grant_type", "authorization_code");
     let client = reqwest::Client::new();
-    let oauth_tokens = client
+    let oauth_tokens: AuthTokens = client
         .post(token_request_url)
         .form(&oauth_data)
         .send()
         .await?
-        .text()
+        .json()
         .await?;
     Ok(oauth_tokens)
 }
