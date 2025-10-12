@@ -86,6 +86,7 @@ dependencies = [
  "anyhow",
  "clap",
  "reqwest",
+ "serde",
  "tokio",
  "warp",
 ]
