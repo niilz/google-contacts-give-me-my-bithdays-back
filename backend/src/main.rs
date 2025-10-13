@@ -4,10 +4,12 @@ use std::str::FromStr;
 
 use backend::AuthTokens;
 use clap::Parser;
+use reqwest::header::HeaderMap;
 use warp::reply::Response;
 use warp::{Filter, serve};
 
 const REDIRECT_URI_DEV: &str = "http://localhost:5000/code";
+const PEOPLE_API_BASE_URL: &str = "https://people.googleapis.com/v1";
 
 #[derive(Parser, Debug)]
 #[command(version, about)]
@@ -53,11 +55,23 @@ async fn main() {
 
 async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> anyhow::Result<()> {
     let oauth_tokens = request_tokens(code, client_id, client_secret).await?;
-    // request the calender data
     println!("Auth-Tokens: {oauth_tokens:?}");
-    //reqwest::get("TODO-Calendar-URL").await?;
-    //todo!()
-    println!("TODO: fetch the birthdays");
+    let client = reqwest::Client::new();
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Authorization",
+        format!("Bearer {}", oauth_tokens.access_token)
+            .parse()
+            .unwrap(),
+    );
+    let connections = client
+        .get(format!("{PEOPLE_API_BASE_URL}/people/me/connections"))
+        .headers(headers)
+        .send()
+        .await?
+        .text()
+        .await?;
+    println!("Connections: {connections}");
     Ok(())
 }
 
