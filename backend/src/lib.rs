@@ -11,44 +11,24 @@ pub struct AuthTokens {
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
-pub struct Birthdays {
-    connections: Vec<Connection>,
+pub struct Connections {
+    connections: Vec<Person>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
-pub struct Connection {
+struct Person {
     #[serde(rename = "resourceName")]
     resource_name: String,
     etag: String,
-    names: Vec<ConnectionData>,
+    names: Vec<Name>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
-struct ConnectionData {
-    metadata: MetaData,
+struct Name {
     #[serde(rename = "displayName")]
     display_name: String,
     #[serde(rename = "familyName")]
-    family_name: String,
-    #[serde(rename = "givenName")]
-    given_name: String,
-    #[serde(rename = "displayNameLastFirst")]
-    display_name_last_first: String,
+    family_name: Option<String>,
     #[serde(rename = "unstructuredName")]
     unstructured_name: String,
-}
-
-#[derive(Deserialize, Debug, PartialEq, Eq)]
-struct MetaData {
-    primary: bool,
-    source: Source,
-    #[serde(rename = "sourcePrimary")]
-    source_primary: bool,
-}
-
-#[derive(Deserialize, Debug, PartialEq, Eq)]
-struct Source {
-    #[serde(rename = "sourcePrimary")]
-    typ: String,
-    id: String,
 }

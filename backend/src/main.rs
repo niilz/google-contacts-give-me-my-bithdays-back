@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
-use backend::AuthTokens;
+use backend::{AuthTokens, Connections};
 use clap::Parser;
 use reqwest::header::HeaderMap;
 use warp::reply::Response;
@@ -64,16 +64,16 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
             .parse()
             .unwrap(),
     );
-    let connections = client
+    let birthday_data: Connections = client
         .get(format!(
             "{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays"
         ))
         .headers(headers)
         .send()
         .await?
-        .text()
+        .json()
         .await?;
-    println!("Connections: {connections}");
+    println!("Birthday data: {birthday_data:?}");
     Ok(())
 }
 
