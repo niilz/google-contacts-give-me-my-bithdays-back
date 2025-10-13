@@ -64,7 +64,7 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
             .parse()
             .unwrap(),
     );
-    let birthday_data: Connections = client
+    let connections: Connections = client
         .get(format!(
             "{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays"
         ))
@@ -73,7 +73,15 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
         .await?
         .json()
         .await?;
-    println!("Birthday data: {birthday_data:?}");
+
+    let mut count = 0;
+    for person in connections.connections {
+        if let Some(birthdays) = person.birthdays {
+            count += 1;
+            println!("{:?}: {:?}", person.names, birthdays);
+        };
+    }
+    println!("Total: {count} birthday entries");
     Ok(())
 }
 
