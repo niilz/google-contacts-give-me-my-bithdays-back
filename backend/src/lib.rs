@@ -12,23 +12,38 @@ pub struct AuthTokens {
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
 pub struct Connections {
-    connections: Vec<Person>,
+    pub connections: Vec<Person>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
-struct Person {
+pub struct Person {
     #[serde(rename = "resourceName")]
     resource_name: String,
     etag: String,
-    names: Vec<Name>,
+    pub names: Vec<Name>,
+    pub birthdays: Option<Vec<Birthday>>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
-struct Name {
+pub struct Name {
     #[serde(rename = "displayName")]
-    display_name: String,
+    pub display_name: String,
     #[serde(rename = "familyName")]
-    family_name: Option<String>,
+    pub family_name: Option<String>,
     #[serde(rename = "unstructuredName")]
-    unstructured_name: String,
+    pub unstructured_name: String,
 }
+
+#[derive(Deserialize, Debug, PartialEq, Eq)]
+pub struct Birthday {
+    pub date: Date,
+    pub text: String,
+}
+
+#[derive(Deserialize, Debug, PartialEq, Eq)]
+pub struct Date {
+    pub year: Option<u32>,
+    pub month: Option<u8>,
+    pub day: Option<u8>,
+}
+
