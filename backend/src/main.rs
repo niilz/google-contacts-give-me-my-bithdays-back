@@ -65,7 +65,9 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
             .unwrap(),
     );
     let connections = client
-        .get(format!("{PEOPLE_API_BASE_URL}/people/me/connections"))
+        .get(format!(
+            "{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays"
+        ))
         .headers(headers)
         .send()
         .await?
