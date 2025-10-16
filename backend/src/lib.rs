@@ -13,6 +13,8 @@ pub struct AuthTokens {
 #[derive(Deserialize, Debug, PartialEq, Eq)]
 pub struct Connections {
     pub connections: Vec<Person>,
+    #[serde(rename = "nextPageToken")]
+    pub next_page_token: Option<String>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]

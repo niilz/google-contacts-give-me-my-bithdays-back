@@ -57,6 +57,7 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
     let oauth_tokens = request_tokens(code, client_id, client_secret).await?;
     println!("Auth-Tokens: {oauth_tokens:?}");
     let client = reqwest::Client::new();
+
     let mut headers = HeaderMap::new();
     headers.insert(
         "Authorization",
@@ -64,16 +65,36 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
             .parse()
             .unwrap(),
     );
-    let connections: Connections = client
-        .get(format!(
-            "{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays&pageSize=1000"
-        ))
+
+    let connections_url =
+        format!("{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays");
+
+    // First page (no next-page-token)
+    let connections = load_connections(&client, connections_url, headers).await?;
+
+    let count = render_birthdays(connections);
+
+    println!("Total: {count} birthday entries");
+    Ok(())
+}
+
+async fn load_connections(
+    client: &reqwest::Client,
+    connections_url: String,
+    headers: HeaderMap,
+) -> anyhow::Result<Connections> {
+    let connections = client
+        .get(connections_url)
         .headers(headers)
         .send()
         .await?
-        .json()
+        .json::<Connections>()
         .await?;
 
+    Ok(connections)
+}
+
+fn render_birthdays(connections: Connections) -> u32 {
     let mut count = 0;
     for person in connections.connections {
         if let Some(birthdays) = person.birthdays {
@@ -89,8 +110,7 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
             println!("{}: {}", names.display_name, birthday);
         };
     }
-    println!("Total: {count} birthday entries");
-    Ok(())
+    count
 }
 
 async fn request_tokens(
