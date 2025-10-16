@@ -37,13 +37,12 @@ pub struct Name {
 #[derive(Deserialize, Debug, PartialEq, Eq)]
 pub struct Birthday {
     pub date: Date,
-    pub text: String,
+    pub text: Option<String>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
 pub struct Date {
     pub year: Option<u32>,
-    pub month: Option<u8>,
-    pub day: Option<u8>,
+    pub month: Option<u32>,
+    pub day: Option<u32>,
 }
-

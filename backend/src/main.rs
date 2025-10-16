@@ -66,7 +66,7 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
     );
     let connections: Connections = client
         .get(format!(
-            "{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays"
+            "{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays&pageSize=1000"
         ))
         .headers(headers)
         .send()
@@ -78,7 +78,15 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
     for person in connections.connections {
         if let Some(birthdays) = person.birthdays {
             count += 1;
-            println!("{:?}: {:?}", person.names, birthdays);
+            let names = &person.names[0];
+            let date = &birthdays[0].date;
+            let birthday = [date.day, date.month, date.year]
+                .iter()
+                .filter_map(|&part| part)
+                .map(|part| part.to_string())
+                .collect::<Vec<_>>()
+                .join(".");
+            println!("{}: {}", names.display_name, birthday);
         };
     }
     println!("Total: {count} birthday entries");
