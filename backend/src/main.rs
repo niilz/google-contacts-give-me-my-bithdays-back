@@ -58,21 +58,28 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
     println!("Auth-Tokens: {oauth_tokens:?}");
     let client = reqwest::Client::new();
 
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        "Authorization",
-        format!("Bearer {}", oauth_tokens.access_token)
-            .parse()
-            .unwrap(),
-    );
-
     let connections_url =
         format!("{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays");
 
     // First page (no next-page-token)
-    let connections = load_connections(&client, connections_url, headers).await?;
+    let connections =
+        load_connections(&client, &connections_url, &oauth_tokens.access_token).await?;
+    let mut count = render_birthdays(&connections);
 
-    let count = render_birthdays(connections);
+    let mut next_page_token = connections.next_page_token;
+    loop {
+        let Some(page_token) = &next_page_token else {
+            break;
+        };
+        let connections = load_connections(
+            &client,
+            &format!("{connections_url}&pageToken={page_token}"),
+            &oauth_tokens.access_token,
+        )
+        .await?;
+        next_page_token = connections.next_page_token.clone();
+        count += render_birthdays(&connections);
+    }
 
     println!("Total: {count} birthday entries");
     Ok(())
@@ -80,24 +87,26 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
 
 async fn load_connections(
     client: &reqwest::Client,
-    connections_url: String,
-    headers: HeaderMap,
+    connections_url: &str,
+    access_token: &str,
 ) -> anyhow::Result<Connections> {
-    let connections = client
-        .get(connections_url)
-        .headers(headers)
-        .send()
-        .await?
-        .json::<Connections>()
-        .await?;
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Authorization",
+        format!("Bearer {}", access_token).parse().unwrap(),
+    );
+
+    let connections = client.get(connections_url).headers(headers).send().await?;
+    //println!("{connections:?}");
+    let connections = connections.json::<Connections>().await?;
 
     Ok(connections)
 }
 
-fn render_birthdays(connections: Connections) -> u32 {
+fn render_birthdays(connections: &Connections) -> u32 {
     let mut count = 0;
-    for person in connections.connections {
-        if let Some(birthdays) = person.birthdays {
+    for person in &connections.connections {
+        if let Some(birthdays) = &person.birthdays {
             count += 1;
             let names = &person.names[0];
             let date = &birthdays[0].date;
