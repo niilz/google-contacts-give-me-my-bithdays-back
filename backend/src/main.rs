@@ -62,26 +62,26 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
         format!("{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays");
 
     // First page (no next-page-token)
-    let connections =
+    let mut connections =
         load_connections(&client, &connections_url, &oauth_tokens.access_token).await?;
-    let mut count = render_birthdays(&connections);
 
-    let mut next_page_token = connections.next_page_token;
+    let mut next_page_token = connections.next_page_token.clone();
     loop {
-        let Some(page_token) = &next_page_token else {
+        if next_page_token.is_none() {
             break;
-        };
-        let connections = load_connections(
+        }
+        let next_connections = load_connections(
             &client,
-            &format!("{connections_url}&pageToken={page_token}"),
+            &format!("{connections_url}&pageToken={}", next_page_token.unwrap()),
             &oauth_tokens.access_token,
         )
         .await?;
-        next_page_token = connections.next_page_token.clone();
-        count += render_birthdays(&connections);
+        next_page_token = next_connections.next_page_token.clone();
+        connections.connections.extend(next_connections.connections);
     }
 
-    println!("Total: {count} birthday entries");
+    let birthday_count = render_birthdays(&connections);
+    println!("Total: {birthday_count} birthday entries");
     Ok(())
 }
 
@@ -107,7 +107,6 @@ fn render_birthdays(connections: &Connections) -> u32 {
     let mut count = 0;
     for person in &connections.connections {
         if let Some(birthdays) = &person.birthdays {
-            count += 1;
             let names = &person.names[0];
             let date = &birthdays[0].date;
             let birthday = [date.day, date.month, date.year]
@@ -116,6 +115,7 @@ fn render_birthdays(connections: &Connections) -> u32 {
                 .map(|part| part.to_string())
                 .collect::<Vec<_>>()
                 .join(".");
+            count += 1;
             println!("{}: {}", names.display_name, birthday);
         };
     }
