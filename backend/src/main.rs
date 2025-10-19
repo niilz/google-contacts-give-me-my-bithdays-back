@@ -2,7 +2,8 @@ use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
-use backend::{AuthTokens, Connections};
+use backend::Birthday;
+use backend::api::{AuthTokens, Connections};
 use clap::Parser;
 use reqwest::header::HeaderMap;
 use warp::reply::Response;
@@ -82,8 +83,15 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
         connections.connections.extend(next_connections.connections);
     }
 
-    let birthday_count = render_birthdays(&connections);
-    println!("Total: {birthday_count} birthday entries");
+    // sort-by-birthday
+    let birthdays: Vec<Birthday> = connections
+        .connections
+        .into_iter()
+        .filter_map(|person| person.try_into().ok())
+        .collect();
+
+    render_birthdays(&birthdays);
+    println!("Total: {} birthday entries", birthdays.len());
     Ok(())
 }
 
@@ -105,23 +113,10 @@ async fn load_connections(
     Ok(connections)
 }
 
-fn render_birthdays(connections: &Connections) -> u32 {
-    let mut count = 0;
-    for person in &connections.connections {
-        if let Some(birthdays) = &person.birthdays {
-            let names = &person.names[0];
-            let date = &birthdays[0].date;
-            let birthday = [date.day, date.month, date.year]
-                .iter()
-                .filter_map(|&part| part)
-                .map(|part| part.to_string())
-                .collect::<Vec<_>>()
-                .join(".");
-            count += 1;
-            println!("{}: {}", names.display_name, birthday);
-        };
+fn render_birthdays(birthdays: &Vec<Birthday>) {
+    for birthday in birthdays {
+        println!("{birthday}")
     }
-    count
 }
 
 async fn request_tokens(
