@@ -58,8 +58,10 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
     println!("Auth-Tokens: {oauth_tokens:?}");
     let client = reqwest::Client::new();
 
-    let connections_url =
-        format!("{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays");
+    // Use max-page size so we need as little requests as possible
+    let connections_url = format!(
+        "{PEOPLE_API_BASE_URL}/people/me/connections?personFields=names,birthdays&pageSize=1000"
+    );
 
     // First page (no next-page-token)
     let mut connections =
