@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str::FromStr;
@@ -83,8 +84,7 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
         connections.connections.extend(next_connections.connections);
     }
 
-    // sort-by-birthday
-    let birthdays: Vec<Birthday> = connections
+    let birthdays: BTreeSet<Birthday> = connections
         .connections
         .into_iter()
         .filter_map(|person| person.try_into().ok())
@@ -113,7 +113,7 @@ async fn load_connections(
     Ok(connections)
 }
 
-fn render_birthdays(birthdays: &Vec<Birthday>) {
+fn render_birthdays(birthdays: &BTreeSet<Birthday>) {
     for birthday in birthdays {
         println!("{birthday}")
     }
