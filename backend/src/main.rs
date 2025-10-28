@@ -92,6 +92,24 @@ async fn fetch_birthdays(code: &str, client_id: &str, client_secret: &str) -> an
 
     render_birthdays(&birthdays);
     println!("Total: {} birthday entries", birthdays.len());
+
+    // write birthdays to calendar
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Authorization",
+        format!("Bearer {}", &oauth_tokens.access_token)
+            .parse()
+            .unwrap(),
+    );
+    let calendars = client
+        .get("https://www.googleapis.com/calendar/v3/users/me/calendarList")
+        .headers(headers)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("{calendars}");
     Ok(())
 }
 
