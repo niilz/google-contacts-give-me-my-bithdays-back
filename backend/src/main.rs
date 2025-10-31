@@ -1,12 +1,8 @@
-use std::collections::BTreeSet;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::str::FromStr;
 
-use backend::birthday::Birthday;
-use backend::http::fetch_birthdays;
-use backend::http::request_tokens;
-use backend::http::write_bdays_to_calendar;
+use backend::sync::sync_contact_birthdays;
 use clap::Parser;
 use warp::reply::Response;
 use warp::{Filter, serve};
@@ -40,30 +36,10 @@ async fn main() {
         })
         .then(
             async move |(code, client_id, client_secret): (String, String, String)| {
-                let response = match request_tokens(&code, &client_id, &client_secret).await {
-                    Ok(access_token) => {
-                        //println!("Auth-Tokens: {oauth_tokens:?}");
-                        match fetch_birthdays(&access_token).await {
-                            Ok(birthdays) => {
-                                //println!("BDays: {birthdays:?}");
-                                render_birthdays(&birthdays);
-                                match write_bdays_to_calendar(&access_token).await {
-                                    Ok(_) => Response::new(
-                                        format!("Thank you for the code: {code}").into(),
-                                    ),
-                                    Err(e) => Response::new(
-                                        format!("Could not load calendars: {e}").into(),
-                                    ),
-                                }
-                            }
-                            Err(e) => {
-                                Response::new(format!("Could not fetch birthdays: {e}").into())
-                            }
-                        }
-                    }
-                    Err(e) => Response::new(format!("Did not receive oauth-token: {e}").into()),
-                };
-                response
+                match sync_contact_birthdays(&code, &client_id, &client_secret).await {
+                    Ok(()) => Response::new("All went well ;)".into()),
+                    Err(e) => Response::new(format!("ERROR: {e}").into()),
+                }
             },
         );
 
@@ -71,10 +47,4 @@ async fn main() {
     server
         .run(SocketAddr::from_str("127.0.0.1:5000").expect("no valid socket-addr"))
         .await;
-}
-
-fn render_birthdays(birthdays: &BTreeSet<Birthday>) {
-    for birthday in birthdays {
-        println!("{birthday}")
-    }
 }

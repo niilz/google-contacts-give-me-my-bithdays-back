@@ -86,13 +86,8 @@ async fn load_connections(
 
     Ok(connections)
 }
-pub async fn write_bdays_to_calendar(access_token: &str) -> anyhow::Result<()> {
+pub async fn get_or_create_calendar(access_token: &str) -> anyhow::Result<String> {
     let client = reqwest::Client::new();
-    // TODO:
-    // Insert Birthday-Entries for every contact with Birthday
-    // Ensure no double inserts (probably first clear everything, or check if all ids from existing
-    // calendar are identical to the new ones, if something like a unique-ID exists and is stored
-    // with eh entry)
     let mut headers = HeaderMap::new();
     headers.insert(
         "Authorization",
@@ -117,8 +112,8 @@ pub async fn write_bdays_to_calendar(access_token: &str) -> anyhow::Result<()> {
         Some(cal) => cal,
         None => create_cal(access_token).await?,
     };
-    println!("{cal:?}");
-    Ok(())
+    //println!("{cal:?}");
+    Ok(cal.id)
 }
 
 async fn create_cal(access_token: &str) -> anyhow::Result<Calendar> {
@@ -130,16 +125,12 @@ async fn create_cal(access_token: &str) -> anyhow::Result<Calendar> {
     );
     let new_cal = client
         .post(format!("{CALENDAR_API_BASE_URL}/calendars"))
-        .body("{'summary': 'contacst-birthday'}")
+        .body(format!("{{'summary': '{DEFAULT_BDAY_CAL}'}}"))
         .headers(headers)
         .send()
         .await?
-        .text()
+        .json()
         .await?;
 
-    println!("new-cal-response: {new_cal}");
-
-    //Ok(new_cal)
-
-    Err(anyhow::format_err!("TODO"))
+    Ok(new_cal)
 }
