@@ -87,20 +87,17 @@ async fn load_connections(
     Ok(connections)
 }
 pub async fn write_bdays_to_calendar(access_token: &str) -> anyhow::Result<()> {
-    // write birthdays to calendar
+    let client = reqwest::Client::new();
+    // TODO:
+    // Insert Birthday-Entries for every contact with Birthday
+    // Ensure no double inserts (probably first clear everything, or check if all ids from existing
+    // calendar are identical to the new ones, if something like a unique-ID exists and is stored
+    // with eh entry)
     let mut headers = HeaderMap::new();
     headers.insert(
         "Authorization",
         format!("Bearer {}", access_token).parse().unwrap(),
     );
-
-    let client = reqwest::Client::new();
-    // TODO:
-    // If not, create calendar
-    // Insert Birthday-Entries for every contact with Birthday
-    // Ensure no double inserts (probably first clear everything, or check if all ids from existing
-    // calendar are identical to the new ones, if something like a unique-ID exists and is stored
-    // with eh entry)
     let calendars: Vec<Calendar> = client
         .get(format!("{CALENDAR_API_BASE_URL}/users/me/calendarList"))
         .headers(headers)
@@ -112,11 +109,37 @@ pub async fn write_bdays_to_calendar(access_token: &str) -> anyhow::Result<()> {
 
     println!("{calendars:?}");
 
-    let bday_cal = calendars.iter().find(|c| c.summary == DEFAULT_BDAY_CAL);
+    let bday_cal = calendars
+        .into_iter()
+        .find(|c| c.summary == DEFAULT_BDAY_CAL);
 
-    match bday_cal {
-        Some(cal) => println!("cal exists: {cal:?}"),
-        None => println!("TODO: create calendar"),
-    }
+    let cal = match bday_cal {
+        Some(cal) => cal,
+        None => create_cal(access_token).await?,
+    };
+    println!("{cal:?}");
     Ok(())
+}
+
+async fn create_cal(access_token: &str) -> anyhow::Result<Calendar> {
+    let client = reqwest::Client::new();
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Authorization",
+        format!("Bearer {}", access_token).parse().unwrap(),
+    );
+    let new_cal = client
+        .post(format!("{CALENDAR_API_BASE_URL}/calendars"))
+        .body("{'summary': 'contacst-birthday'}")
+        .headers(headers)
+        .send()
+        .await?
+        .text()
+        .await?;
+
+    println!("new-cal-response: {new_cal}");
+
+    //Ok(new_cal)
+
+    Err(anyhow::format_err!("TODO"))
 }
