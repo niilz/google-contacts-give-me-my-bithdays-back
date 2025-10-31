@@ -49,7 +49,7 @@ impl From<&Birthday> for InsertEvent {
     fn from(birthday: &Birthday) -> Self {
         let date = match birthday.year {
             Some(year) => format!("{}-{:02}-{:02}", year, birthday.month, birthday.day),
-            None => format!("{:02}-{:02}", birthday.month, birthday.day),
+            None => format!("2020-{:02}-{:02}", birthday.month, birthday.day),
         };
         Self {
             start: date.clone(),
@@ -177,8 +177,8 @@ mod test {
 
         let expected_event = InsertEvent {
             summary: format!("🎁dummy"),
-            start: "06-01".to_string(),
-            end: "06-01".to_string(),
+            start: "2020-06-01".to_string(),
+            end: "2020-06-01".to_string(),
             birthday_properties: BirthdayProperties {
                 typ: "birthday".to_string(),
             },

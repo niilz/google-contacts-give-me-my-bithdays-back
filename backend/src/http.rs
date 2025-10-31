@@ -148,7 +148,6 @@ pub async fn insert_birthday(
     );
     let insert_event: InsertEvent = bday.into();
     let new_cal = client
-        // TODO: continue HERE
         .post(format!(
             "{CALENDAR_API_BASE_URL}/calendars/{calendar_id}/events"
         ))
