@@ -2,18 +2,20 @@ use std::collections::{BTreeSet, HashMap};
 
 use reqwest::header::HeaderMap;
 
-use crate::Birthday;
-use crate::api::{AuthTokens, Connections};
+use crate::api::calendar::{Calendar, CalendarList};
+use crate::api::person::{AuthTokens, Connections};
+use crate::birthday::Birthday;
 
 const REDIRECT_URI_DEV: &str = "http://localhost:5000/code";
 const PEOPLE_API_BASE_URL: &str = "https://people.googleapis.com/v1";
 const CALENDAR_API_BASE_URL: &str = "https://www.googleapis.com/calendar/v3";
+const DEFAULT_BDAY_CAL: &str = "contacts-birthdays";
 
 pub async fn request_tokens(
     code: &str,
     client_id: &str,
     client_secret: &str,
-) -> anyhow::Result<AuthTokens> {
+) -> anyhow::Result<String> {
     let token_request_url = "https://oauth2.googleapis.com/token";
     let mut oauth_data = HashMap::new();
     oauth_data.insert("code", code);
@@ -29,7 +31,7 @@ pub async fn request_tokens(
         .await?
         .json()
         .await?;
-    Ok(oauth_tokens)
+    Ok(oauth_tokens.access_token)
 }
 
 pub async fn fetch_birthdays(access_token: &str) -> anyhow::Result<BTreeSet<Birthday>> {
@@ -94,22 +96,27 @@ pub async fn write_bdays_to_calendar(access_token: &str) -> anyhow::Result<()> {
 
     let client = reqwest::Client::new();
     // TODO:
-    // replace base-URL with constant
-    // Get calendars
-    // Is selected calendar present? (defaults to "contacts-birthdays")
     // If not, create calendar
     // Insert Birthday-Entries for every contact with Birthday
     // Ensure no double inserts (probably first clear everything, or check if all ids from existing
     // calendar are identical to the new ones, if something like a unique-ID exists and is stored
     // with eh entry)
-    let calendars = client
+    let calendars: Vec<Calendar> = client
         .get(format!("{CALENDAR_API_BASE_URL}/users/me/calendarList"))
         .headers(headers)
         .send()
         .await?
-        .text()
-        .await?;
+        .json::<CalendarList>()
+        .await?
+        .items;
 
-    println!("{calendars}");
+    println!("{calendars:?}");
+
+    let bday_cal = calendars.iter().find(|c| c.summary == DEFAULT_BDAY_CAL);
+
+    match bday_cal {
+        Some(cal) => println!("cal exists: {cal:?}"),
+        None => println!("TODO: create calendar"),
+    }
     Ok(())
 }
