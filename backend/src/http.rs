@@ -2,7 +2,7 @@ use std::collections::{BTreeSet, HashMap};
 
 use reqwest::header::HeaderMap;
 
-use crate::api::calendar::{Calendar, CalendarList};
+use crate::api::calendar::{Calendar, CalendarList, InsertEvent};
 use crate::api::person::{AuthTokens, Connections};
 use crate::birthday::Birthday;
 
@@ -126,6 +126,33 @@ async fn create_cal(access_token: &str) -> anyhow::Result<Calendar> {
     let new_cal = client
         .post(format!("{CALENDAR_API_BASE_URL}/calendars"))
         .body(format!("{{'summary': '{DEFAULT_BDAY_CAL}'}}"))
+        .headers(headers)
+        .send()
+        .await?
+        .json()
+        .await?;
+
+    Ok(new_cal)
+}
+
+pub async fn insert_birthday(
+    access_token: &str,
+    bday: &Birthday,
+    calendar_id: &str,
+) -> anyhow::Result<()> {
+    let client = reqwest::Client::new();
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        "Authorization",
+        format!("Bearer {}", access_token).parse().unwrap(),
+    );
+    let insert_event: InsertEvent = bday.into();
+    let new_cal = client
+        // TODO: continue HERE
+        .post(format!(
+            "{CALENDAR_API_BASE_URL}/calendars/{calendar_id}/events"
+        ))
+        .body(serde_json::to_string(&insert_event)?)
         .headers(headers)
         .send()
         .await?

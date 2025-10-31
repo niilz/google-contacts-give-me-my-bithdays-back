@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use crate::api::calendar::{BirthdayProperties, InsertEvent};
 use crate::api::person::Person;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -44,6 +45,23 @@ impl TryFrom<Person> for Birthday {
     }
 }
 
+impl From<&Birthday> for InsertEvent {
+    fn from(birthday: &Birthday) -> Self {
+        let date = match birthday.year {
+            Some(year) => format!("{}-{:02}-{:02}", year, birthday.month, birthday.day),
+            None => format!("{:02}-{:02}", birthday.month, birthday.day),
+        };
+        Self {
+            start: date.clone(),
+            end: date,
+            summary: format!("🎁{}", birthday.name),
+            birthday_properties: BirthdayProperties {
+                typ: "birthday".to_string(),
+            },
+        }
+    }
+}
+
 impl Display for Birthday {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.year {
@@ -56,6 +74,8 @@ impl Display for Birthday {
 #[cfg(test)]
 mod test {
     use super::Birthday;
+    use crate::api::calendar::BirthdayProperties;
+    use crate::api::calendar::InsertEvent;
 
     #[test]
     fn birthday_with_earlier_month_comes_first() {
@@ -118,5 +138,55 @@ mod test {
         birthdays.sort();
 
         assert_eq!(birthdays, vec![june, june_later])
+    }
+
+    #[test]
+    fn birthday_to_event_with_year() {
+        // given
+        let june = Birthday {
+            name: "dummy".to_string(),
+            day: 1,
+            month: 6,
+            year: Some(2000),
+        };
+
+        let expected_event = InsertEvent {
+            summary: format!("🎁dummy"),
+            start: "2000-06-01".to_string(),
+            end: "2000-06-01".to_string(),
+            birthday_properties: BirthdayProperties {
+                typ: "birthday".to_string(),
+            },
+        };
+
+        // when
+        let event: InsertEvent = (&june).into();
+
+        assert_eq!(event, expected_event);
+    }
+
+    #[test]
+    fn birthday_to_event_no_year() {
+        // given
+        let june = Birthday {
+            name: "dummy".to_string(),
+            day: 1,
+            month: 6,
+            year: None,
+        };
+
+        let expected_event = InsertEvent {
+            summary: format!("🎁dummy"),
+            start: "06-01".to_string(),
+            end: "06-01".to_string(),
+            birthday_properties: BirthdayProperties {
+                typ: "birthday".to_string(),
+            },
+        };
+
+        // when
+        let event: InsertEvent = (&june).into();
+
+        assert_eq!(event, expected_event);
     }
 }

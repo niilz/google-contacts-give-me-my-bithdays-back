@@ -1,6 +1,7 @@
 use std::collections::BTreeSet;
 
 use crate::birthday::Birthday;
+use crate::http::insert_birthday;
 pub use crate::http::{fetch_birthdays, get_or_create_calendar, request_tokens};
 
 pub async fn sync_contact_birthdays(
@@ -16,6 +17,9 @@ pub async fn sync_contact_birthdays(
     let calendar_id = get_or_create_calendar(&access_token).await?;
     // TODO:
     // Insert Birthday-Entries for every contact with Birthday
+    for bday in birthdays {
+        insert_birthday(&access_token, &bday, &calendar_id).await?;
+    }
     // Ensure no double inserts (probably first clear everything, or check if all ids from existing
     // calendar are identical to the new ones, if something like a unique-ID exists and is stored
     // with eh entry)
