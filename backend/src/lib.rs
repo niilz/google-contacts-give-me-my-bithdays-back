@@ -5,6 +5,7 @@ use serde::Deserialize;
 use self::api::Person;
 
 pub mod api;
+pub mod http;
 
 #[derive(Deserialize, Debug, PartialEq, Eq, Clone)]
 pub struct Birthday {
