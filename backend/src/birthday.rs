@@ -49,7 +49,8 @@ impl From<&Birthday> for InsertEvent {
     fn from(birthday: &Birthday) -> Self {
         let year = match birthday.year {
             Some(year) => year,
-            None => 2020,
+            // We need some start date if we do not know the year
+            None => 2025,
         };
         let start = format!("{year}-{:02}-{:02}", birthday.month, birthday.day);
         let end = format!("{year}-{:02}-{:02}", birthday.month, birthday.day + 1);
@@ -180,8 +181,8 @@ mod test {
 
         let expected_event = InsertEvent {
             summary: format!("🎁dummy"),
-            start: "2020-06-01".into(),
-            end: "2020-06-02".into(),
+            start: "2025-06-01".into(),
+            end: "2025-06-02".into(),
             event_type: "default".to_string(),
             transparency: "transparent".to_string(),
             visibility: "private".to_string(),
