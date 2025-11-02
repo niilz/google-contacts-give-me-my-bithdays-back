@@ -17,18 +17,13 @@ pub(crate) struct InsertEvent {
     pub(crate) summary: String,
     pub(crate) start: Date,
     pub(crate) end: Date,
-    pub(crate) recurrence: Vec<String>,
     #[serde(rename = "eventType")]
+    // cannot be birthday (those are only allowed on primary calendar)
     pub(crate) event_type: String,
-    #[serde(rename = "birthdayProperties")]
-    pub(crate) birthday_properties: BirthdayProperties,
-}
-
-#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
-pub(crate) struct BirthdayProperties {
-    //pub(crate) contact: String, format people/c12345
-    #[serde(rename = "type")]
-    pub(crate) typ: String,
+    pub(crate) transparency: String,
+    pub(crate) visibility: String,
+    pub(crate) recurrence: Vec<String>,
+    // TODO: reminders
 }
 
 #[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]

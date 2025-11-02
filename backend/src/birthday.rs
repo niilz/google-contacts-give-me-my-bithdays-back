@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::api::calendar::{BirthdayProperties, Date, InsertEvent};
+use crate::api::calendar::{Date, InsertEvent};
 use crate::api::person::Person;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -57,17 +57,10 @@ impl From<&Birthday> for InsertEvent {
             start: Date { date: start },
             end: Date { date: end },
             summary: format!("🎁{}", birthday.name),
-            event_type: "birthday".to_string(),
-            recurrence: vec![
-                format!(
-                    "RDATE:VALUE=DATE:{}{:02}{:02}",
-                    year, birthday.month, birthday.day
-                ),
-                "RRULE:FREQ=YEARLY".to_string(),
-            ],
-            birthday_properties: BirthdayProperties {
-                typ: "birthday".to_string(),
-            },
+            event_type: "default".to_string(),
+            transparency: "transparent".to_string(),
+            visibility: "private".to_string(),
+            recurrence: vec!["RRULE:FREQ=YEARLY".to_string()],
         }
     }
 }
@@ -84,7 +77,6 @@ impl Display for Birthday {
 #[cfg(test)]
 mod test {
     use super::Birthday;
-    use crate::api::calendar::BirthdayProperties;
     use crate::api::calendar::InsertEvent;
 
     #[test]
@@ -164,14 +156,10 @@ mod test {
             summary: format!("🎁dummy"),
             start: "2000-06-01".into(),
             end: "2000-06-02".into(),
-            event_type: "birthday".to_string(),
-            recurrence: vec![
-                "RDATE:VALUE=DATE:20000601".to_string(),
-                "RRULE:FREQ=YEARLY".to_string(),
-            ],
-            birthday_properties: BirthdayProperties {
-                typ: "birthday".to_string(),
-            },
+            event_type: "default".to_string(),
+            transparency: "transparent".to_string(),
+            visibility: "private".to_string(),
+            recurrence: vec!["RRULE:FREQ=YEARLY".to_string()],
         };
 
         // when
@@ -194,14 +182,10 @@ mod test {
             summary: format!("🎁dummy"),
             start: "2020-06-01".into(),
             end: "2020-06-02".into(),
-            event_type: "birthday".to_string(),
-            recurrence: vec![
-                "RDATE:VALUE=DATE:20200601".to_string(),
-                "RRULE:FREQ=YEARLY".to_string(),
-            ],
-            birthday_properties: BirthdayProperties {
-                typ: "birthday".to_string(),
-            },
+            event_type: "default".to_string(),
+            transparency: "transparent".to_string(),
+            visibility: "private".to_string(),
+            recurrence: vec!["RRULE:FREQ=YEARLY".to_string()],
         };
 
         // when
