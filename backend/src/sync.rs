@@ -15,9 +15,10 @@ pub async fn sync_contact_birthdays(
     //println!("BDays: {birthdays:?}");
     render_birthdays(&birthdays);
     let calendar_id = get_or_create_calendar(&access_token).await?;
-    // TODO:
-    // Insert Birthday-Entries for every contact with Birthday
     for bday in birthdays {
+        // TODO:
+        // deserialize response
+        // also handle error responses and log which bday failed
         insert_birthday(&access_token, &bday, &calendar_id).await?;
     }
     // Ensure no double inserts (probably first clear everything, or check if all ids from existing
