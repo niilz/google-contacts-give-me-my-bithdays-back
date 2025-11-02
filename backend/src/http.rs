@@ -123,6 +123,9 @@ async fn create_cal(access_token: &str) -> anyhow::Result<Calendar> {
         "Authorization",
         format!("Bearer {}", access_token).parse().unwrap(),
     );
+
+    println!("creating new calendar");
+
     let new_cal = client
         .post(format!("{CALENDAR_API_BASE_URL}/calendars"))
         .body(format!("{{'summary': '{DEFAULT_BDAY_CAL}'}}"))
@@ -147,16 +150,23 @@ pub async fn insert_birthday(
         format!("Bearer {}", access_token).parse().unwrap(),
     );
     let insert_event: InsertEvent = bday.into();
-    let new_cal = client
+    let insert_bday = serde_json::to_string(&insert_event)?;
+
+    //println!("insert_bday: {insert_bday}");
+
+    let new_bday = client
         .post(format!(
             "{CALENDAR_API_BASE_URL}/calendars/{calendar_id}/events"
         ))
-        .body(serde_json::to_string(&insert_event)?)
+        .body(insert_bday)
         .headers(headers)
         .send()
         .await?
-        .json()
+        .text()
         .await?;
 
-    Ok(new_cal)
+    println!("{new_bday}");
+    //println!("posted: {}", new_bday.summary);
+
+    Ok(())
 }
